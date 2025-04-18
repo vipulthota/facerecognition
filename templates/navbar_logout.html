@@ -103,15 +103,25 @@
     </style>
   </head>
   <body>
-    <nav class="navbar">
-        <div class="navbar-container">
-            <input type="checkbox" class="menu-toggle" id="menu-toggle">
-            <div class="hamburger-lines">
-                <span class="line line1"></span>
-                <span class="line line2"></span>
-                <span class="line line3"></span>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/">Face Recognition Attendance</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/register">Register New User</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/manage_users">Manage Users</a>
+                    </li>
+                    <li class="nav-item">
+                        <!-- <a class="nav-link" href="/logout">Logout</a> -->
+                    </li>
+                </ul>
             </div>
-            <img src="static/images/spicy.png" alt="Logged-In" class="logo">
         </div>
     </nav>
     
