@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Users - Face Recognition Attendance System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-eOJMYsd53ii+scO/bJGFsiCZc+5NDVN2yr8+0RDqr0Ql0h+rP48ckxlpbzKgwra6" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #faf9f5;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .user-management {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .user-card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            background-color: #fff;
+            transition: all 0.3s ease;
+        }
+        .user-card:hover {
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .btn-danger {
+            background-color: #dc3545;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .btn-danger:hover {
+            background-color: #c82333;
+        }
+        .status-message {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .success-message {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error-message {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+    </style>
+</head>
+<body>
+    {% include 'navbar_logout.html' %}
+    <div class="container">
+        <h1 class="text-center mb-4">Manage Registered Users</h1>
+        
+        <div class="user-management">
+            <div id="statusMessage" class="status-message" style="display: none;"></div>
+            
+            <div class="row">
+                <div class="col-md-12">
+                    <div id="usersList">
+                        <!-- Users will be loaded here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Function to show status message
+        function showMessage(message, isError = false) {
+            const statusDiv = document.getElementById('statusMessage');
+            statusDiv.textContent = message;
+            statusDiv.className = `status-message ${isError ? 'error-message' : 'success-message'}`;
+            statusDiv.style.display = 'block';
+            
+            // Hide message after 3 seconds
+            setTimeout(() => {
+                statusDiv.style.display = 'none';
+            }, 3000);
+        }
+
+        // Function to load users
+        async function loadUsers() {
+            try {
+                const response = await fetch('/get_all_users');
+                const data = await response.json();
+                
+                if (data.success) {
+                    const usersList = document.getElementById('usersList');
+                    usersList.innerHTML = '';
+                    
+                    if (data.users.length === 0) {
+                        usersList.innerHTML = '<div class="alert alert-info">No users registered yet.</div>';
+                        return;
+                    }
+                    
+                    data.users.forEach(user => {
+                        const userCard = document.createElement('div');
+                        userCard.className = 'user-card';
+                        userCard.innerHTML = `
+                            <div class="row align-items-center">
+                                <div class="col-md-8">
+                                    <h5>${user.name}</h5>
+                                    <p class="mb-0">ID: ${user.user_id}</p>
+                                    <small class="text-muted">Registered on: ${user.registration_date}</small>
+                                </div>
+                                <div class="col-md-4 text-end">
+                                    <button class="btn btn-danger" onclick="deleteUser('${user.user_id}', '${user.name}')">
+                                        <i class="fas fa-trash"></i> Delete User
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                        usersList.appendChild(userCard);
+                    });
+                } else {
+                    showMessage('Error loading users: ' + data.message, true);
+                    const usersList = document.getElementById('usersList');
+                    usersList.innerHTML = `
+                        <div class="alert alert-danger">
+                            <h5>Error Loading Users</h5>
+                            <p>${data.message}</p>
+                            <p>Please try refreshing the page. If the problem persists, contact the administrator.</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showMessage('Error loading users: ' + error.message, true);
+                const usersList = document.getElementById('usersList');
+                usersList.innerHTML = `
+                    <div class="alert alert-danger">
+                        <h5>Connection Error</h5>
+                        <p>Could not connect to the server. Please check your internet connection and try again.</p>
+                        <button class="btn btn-primary mt-2" onclick="loadUsers()">Retry</button>
+                    </div>
+                `;
+            }
+        }
+
+        // Function to delete user
+        async function deleteUser(userId, userName) {
+            if (!confirm(`Are you sure you want to delete user ${userName}? This action cannot be undone.`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch('/delete_user', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        user_id: userId
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showMessage(`User ${userName} deleted successfully`);
+                    loadUsers(); // Reload the users list
+                } else {
+                    showMessage('Error deleting user: ' + data.message, true);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showMessage('Error deleting user', true);
+            }
+        }
+
+        // Load users when page loads
+        document.addEventListener('DOMContentLoaded', loadUsers);
+    </script>
+</body>
+</html> 
